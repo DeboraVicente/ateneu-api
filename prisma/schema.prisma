@@ -5,8 +5,8 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
-  url      = "file:./dev.db"
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
 }
 
 model User {
@@ -15,6 +15,90 @@ model User {
   lastName  String
   email     String   @unique
   password  String
+  role      String   @default("USER") // "USER" | "ADMIN"
+  avatarUrl String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  favorites Favorite[]
+  reviews   Review[]
+}
+
+model Place {
+  id           String   @id @default(uuid())
+  name         String
+  description  String?
+  category     String
+  address      String
+  lat          Float
+  lng          Float
+  phone        String?
+  website      String?
+  imageUrl     String?
+  externalId   String?  @unique // id na fonte externa (ex: OpenStreetMap node id)
+  sourceApi    String   @default("manual") // "manual" | "openstreetmap"
+  openingHours Json?
+  isFree       Boolean  @default(false)
+  priceLevel   Int?
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  events    Event[]
+  favorites Favorite[]
+  reviews   Review[]
+}
+
+model Event {
+  id          String    @id @default(uuid())
+  externalId  String?   @unique
+  title       String
+  description String?
+  category    String
+  date        DateTime
+  endDate     DateTime?
+  address     String?
+  lat         Float?
+  lng         Float?
+  imageUrl    String?
+  isFree      Boolean   @default(false)
+  price       Float?
+  priceLabel  String?
+  ticketUrl   String?
+  sourceApi   String    @default("manual") // fonte de dados do evento (hoje só "manual" — cadastro pela plataforma)
+  isActive    Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  placeId String?
+  place   Place?  @relation(fields: [placeId], references: [id])
+
+  favorites Favorite[]
+}
+
+model Favorite {
+  id        String   @id @default(uuid())
+  userId    String
+  placeId   String?
+  eventId   String?
+  createdAt DateTime @default(now())
+
+  user  User   @relation(fields: [userId], references: [id])
+  place Place? @relation(fields: [placeId], references: [id])
+  event Event? @relation(fields: [eventId], references: [id])
+
+  @@unique([userId, placeId])
+  @@unique([userId, eventId])
+}
+
+model Review {
+  id        String   @id @default(uuid())
+  placeId   String
+  userId    String
+  rating    Int
+  comment   String?
+  createdAt DateTime @default(now())
+
+  place Place @relation(fields: [placeId], references: [id])
+  user  User  @relation(fields: [userId], references: [id])
 }

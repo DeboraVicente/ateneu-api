@@ -1,31 +1,26 @@
+import dotenv from 'dotenv';
+dotenv.config();
+
 import express from 'express';
 import cors from 'cors';
-import { prisma } from './lib/prisma.js';
-import bcrypt from 'bcryptjs';
+import authRoutes from './routes/auth';
+import placesRoutes from './routes/places';
+import eventsRoutes from './routes/events';
+import favoritesRoutes from './routes/favorites';
+import moviesRoutes from './routes/movies';
 
 const app = express();
+const PORT = process.env.PORT || 3000;
+
 app.use(cors());
 app.use(express.json());
-app.post('/api/auth/register', async (req, res) => {
-    const { firstName, lastName, email, password } = req.body;
-  
-    try {
-      // 1. Verificar se o e-mail já existe
-      const userExists = await prisma.user.findUnique({ where: { email } });
-      if (userExists) return res.status(400).json({ message: 'E-mail já cadastrado.' });
-  
-      // 2. Criptografar a senha (Segurança!)
-      const hashedPassword = await bcrypt.hash(password, 8);
-  
-      // 3. Salvar no banco SQLite
-      const user = await prisma.user.create({
-        data: { firstName, lastName, email, password: hashedPassword }
-      });
-  
-      return res.status(201).json({ message: 'Usuário criado com sucesso!', userId: user.id });
-    } catch (error) {
-      return res.status(500).json({ message: 'Erro ao criar conta.' });
-    }
-  });
-  
-  app.listen(3000, () => console.log('🚀 API Rodando com Prisma + SQLite'));
+
+app.use('/api/auth', authRoutes);
+app.use('/api/places', placesRoutes);
+app.use('/api/events', eventsRoutes);
+app.use('/api/favorites', favoritesRoutes);
+app.use('/api/movies', moviesRoutes);
+
+app.listen(PORT, () => {
+  console.log(`🚀 Servidor rodando em http://localhost:${PORT}`);
+});
