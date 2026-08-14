@@ -1,47 +1,24 @@
+import 'dotenv/config';
 import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
+// externalIds de um seed anterior fora do escopo atual (locais de São
+// Paulo e categoria Gastronomia) — removidos aqui pois upsert não apaga
+// registros que saíram do seed.
+const STALE_EVENT_EXTERNAL_IDS = ['demo-wine-tapas'];
+const STALE_PLACE_EXTERNAL_IDS = ['demo-mac', 'demo-parque-ibira', 'demo-restaurante-1'];
+
 async function main() {
   console.log('🌱 Seeding database...');
 
+  await prisma.event.deleteMany({ where: { externalId: { in: STALE_EVENT_EXTERNAL_IDS } } });
+  await prisma.place.deleteMany({ where: { externalId: { in: STALE_PLACE_EXTERNAL_IDS } } });
+
   // ── Places ──────────────────────────────────────────────
+  // Apenas locais reais de Campinas, dentro do escopo do produto
+  // (sem Gastronomia — ver services/openStreetMap.service.ts).
   const places = await Promise.all([
-    prisma.place.upsert({
-      where: { externalId: 'demo-mac' },
-      update: {},
-      create: {
-        name: 'Museu de Arte Contemporânea',
-        description: 'Um dos principais museus de arte moderna da América Latina, com acervo de mais de 10.000 obras.',
-        category: 'MUSEU',
-        address: 'Parque do Ibirapuera, Portão 3 — São Paulo, SP',
-        lat: -23.5874,
-        lng: -46.6576,
-        isFree: true,
-        externalId: 'demo-mac',
-        openingHours: {
-          'ter-dom': '10:00–18:00',
-          'seg': 'Fechado',
-        },
-      },
-    }),
-    prisma.place.upsert({
-      where: { externalId: 'demo-parque-ibira' },
-      update: {},
-      create: {
-        name: 'Parque Ibirapuera',
-        description: 'O maior parque urbano de São Paulo, com lagos, museus, anfiteatro e extensas áreas verdes.',
-        category: 'PARQUE',
-        address: 'Av. Pedro Álvares Cabral — São Paulo, SP',
-        lat: -23.5872,
-        lng: -46.6577,
-        isFree: true,
-        externalId: 'demo-parque-ibira',
-        openingHours: {
-          'todos os dias': '05:00–00:00',
-        },
-      },
-    }),
     prisma.place.upsert({
       where: { externalId: 'demo-teatro-muni' },
       update: {},
@@ -97,25 +74,6 @@ async function main() {
         },
       },
     }),
-    prisma.place.upsert({
-      where: { externalId: 'demo-restaurante-1' },
-      update: {},
-      create: {
-        name: 'Pasta & Vino Gourmet',
-        description: 'Restaurante italiano com massas artesanais e carta de vinhos cuidadosamente selecionada.',
-        category: 'GASTRONOMIA',
-        address: 'Rua Coronel Quirino, 1400 — Campinas, SP',
-        lat: -22.9081,
-        lng: -47.0612,
-        isFree: false,
-        priceLevel: 3,
-        externalId: 'demo-restaurante-1',
-        openingHours: {
-          'seg-sab': '12:00–22:30',
-          'dom': '12:00–16:00',
-        },
-      },
-    }),
   ]);
 
   console.log(`✓ ${places.length} locais criados`);
@@ -136,31 +94,11 @@ async function main() {
         category: 'SHOWS',
         date: new Date(now.getFullYear(), now.getMonth(), now.getDate(), 16, 0),
         endDate: new Date(now.getFullYear(), now.getMonth(), now.getDate(), 21, 0),
-        address: 'Parque Ibirapuera — São Paulo, SP',
-        lat: -23.5872,
-        lng: -46.6577,
+        address: 'Campinas, SP',
         isFree: false,
         price: 50,
         priceLabel: 'R$ 50,00',
         sourceApi: 'manual',
-        placeId: places[1].id,
-      },
-    }),
-    prisma.event.upsert({
-      where: { externalId: 'demo-wine-tapas' },
-      update: {},
-      create: {
-        externalId: 'demo-wine-tapas',
-        title: 'Noite de Degustação Wine & Tapas',
-        description: 'Degustação com vinhos nacionais e tapas espanholas artesanais. Experiência guiada por sommeliers.',
-        category: 'GASTRONOMIA',
-        date: new Date(tomorrow.getFullYear(), tomorrow.getMonth(), tomorrow.getDate(), 20, 30),
-        endDate: new Date(tomorrow.getFullYear(), tomorrow.getMonth(), tomorrow.getDate(), 23, 59),
-        isFree: false,
-        price: 120,
-        priceLabel: 'R$ 120,00',
-        sourceApi: 'manual',
-        placeId: places[5].id,
       },
     }),
     prisma.event.upsert({
@@ -173,10 +111,10 @@ async function main() {
         category: 'EXPOSICAO',
         date: new Date(tomorrow.getFullYear(), tomorrow.getMonth(), tomorrow.getDate(), 10, 0),
         endDate: new Date(tomorrow.getFullYear(), tomorrow.getMonth(), tomorrow.getDate(), 18, 0),
+        address: 'Campinas, SP',
         isFree: true,
         priceLabel: 'Grátis',
         sourceApi: 'manual',
-        placeId: places[0].id,
       },
     }),
     prisma.event.upsert({
@@ -184,14 +122,12 @@ async function main() {
       update: {},
       create: {
         externalId: 'demo-rock-city',
-        title: 'Rock in the City 2024',
-        description: 'O maior evento de rock alternativo do ano chega à capital com mais de 30 bandas internacionais e experiências gastronômicas.',
+        title: 'Rock in the City',
+        description: 'O maior evento de rock alternativo do ano chega a Campinas com mais de 30 bandas regionais e experiências gastronômicas.',
         category: 'SHOWS',
         date: new Date(nextWeek.getFullYear(), nextWeek.getMonth(), nextWeek.getDate(), 18, 0),
         endDate: new Date(nextWeek.getFullYear(), nextWeek.getMonth(), nextWeek.getDate() + 1, 2, 0),
-        address: 'Parque Ibirapuera — São Paulo, SP',
-        lat: -23.5872,
-        lng: -46.6577,
+        address: 'Campinas, SP',
         isFree: false,
         price: 180,
         priceLabel: 'R$ 180,00',
@@ -205,7 +141,7 @@ async function main() {
       create: {
         externalId: 'demo-trilha-ecologica',
         title: 'Trilha Ecológica ao Amanhecer',
-        description: 'Caminhada guiada pela Serra da Cantareira ao nascer do sol. Inclui café da manhã orgânico.',
+        description: 'Caminhada guiada pela mata ao nascer do sol. Inclui café da manhã orgânico.',
         category: 'AR_LIVRE',
         date: new Date(nextWeek.getFullYear(), nextWeek.getMonth(), nextWeek.getDate() + 1, 5, 0),
         endDate: new Date(nextWeek.getFullYear(), nextWeek.getMonth(), nextWeek.getDate() + 1, 10, 0),
