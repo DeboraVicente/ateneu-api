@@ -5,14 +5,15 @@ Backend do Ateneu, uma fonte unificada de informações sobre cultura e lazer em
 ## Stack
 
 - Node.js + Express 5 + TypeScript
-- Prisma ORM + SQLite (`dev.db`)
-- JWT (`jsonwebtoken`) para autenticação, `bcryptjs` para hash de senha
+- Prisma ORM + PostgreSQL
+- JWT (`jsonwebtoken`) para autenticação (access + refresh token), `bcryptjs` para hash de senha
 - Zod para validação de payload
 - Fontes de dados externas: OpenStreetMap (Overpass API, locais) e TMDB (metadados de filmes em cartaz)
 
 ## Pré-requisitos
 
 - Node.js 20+
+- Um banco PostgreSQL (em produção, Supabase)
 
 ## Configuração
 
@@ -20,12 +21,21 @@ Crie um `.env` na raiz com:
 
 ```
 PORT=3000
-DATABASE_URL="file:./dev.db"
-JWT_SECRET=<segredo para assinar os tokens>
+DATABASE_URL=<connection string do Postgres, ex: Supabase>
+JWT_SECRET=<segredo para assinar os access tokens>
+JWT_REFRESH_SECRET=<segredo para assinar os refresh tokens>
 TMDB_API_KEY=<Read Access Token da TMDB, https://developer.themoviedb.org/docs/getting-started>
 ```
 
-`DATABASE_URL` é opcional (o schema já usa `file:./dev.db` por padrão). A sincronização de locais via OpenStreetMap (`POST /api/places/sync-osm`) não precisa de chave.
+A sincronização de locais via OpenStreetMap (`POST /api/places/sync-osm`) não precisa de chave.
+
+## Deploy
+
+Ambiente de produção:
+
+- **API**: Render (`https://ateneu-api.onrender.com`) — free tier, cold-start no primeiro request após ficar ocioso.
+- **Banco**: Supabase (PostgreSQL), via `DATABASE_URL`.
+- **Frontend**: Vercel (`https://ateneu-web.vercel.app`), consome esta API via `VITE_API_URL`.
 
 ## Rodando o projeto
 
@@ -65,6 +75,7 @@ Base: `/api`
 |---|---|---|---|
 | POST | `/auth/register` | — | Cadastro de usuário |
 | POST | `/auth/login` | — | Login, retorna token JWT |
+| POST | `/auth/refresh` | — | Renova o access token a partir de um refresh token válido |
 | GET | `/places` | não | Lista locais (filtros: `category`, `search`, `lat`/`lng`+`radius`, `isFree`, paginação) |
 | GET | `/places/:id` | não | Detalhe de um local (com reviews) |
 | POST | `/places` | admin | Cria local |
@@ -86,4 +97,4 @@ Login é opcional em toda a navegação; só é exigido para favoritar e para li
 
 Este é o backend de um TCC em desenvolvimento ativo. O andamento, decisões de escopo (fontes de dados, dedup, fluxo de organizador) e próximos passos estão documentados em [`ROADMAP.md`](../ROADMAP.md), na raiz do repositório.
 
-Limitações conhecidas: sem `POST /api/auth/refresh` (o frontend já espera por ele, mas ainda não está implementado no backend); sem testes automatizados; distância geográfica calculada via haversine em memória, sem índice espacial (suficiente para o volume atual, não escalável).
+Limitações conhecidas: sem testes automatizados; distância geográfica calculada via haversine em memória, sem índice espacial (suficiente para o volume atual, não escalável).
