@@ -1,6 +1,8 @@
 import axios from 'axios';
 
-const OVERPASS_URL = 'https://overpass-api.de/api/interpreter';
+// Instância pública oficial (overpass-api.de) tem apresentado indisponibilidade
+// ("server too busy") mesmo para consultas pequenas — usando o mirror kumi.systems.
+const OVERPASS_URL = 'https://overpass.kumi.systems/api/interpreter';
 
 // Centro de Campinas/SP
 const CAMPINAS_LAT = -22.9099;
