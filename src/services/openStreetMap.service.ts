@@ -12,13 +12,17 @@ const RADIUS_M = 15000;
 // Gastronomia fica de fora: restaurante não é o foco de um guia de cultura/lazer
 // (já bem servido por Google Maps/iFood), e é de longe a tag mais numerosa/genérica
 // no OpenStreetMap — traria centenas de resultados sem nenhuma curadoria de relevância.
+//
+// Igreja também fica de fora pelo mesmo motivo: amenity=place_of_worship captura toda
+// paróquia/congregação de bairro no OSM, sem distinguir relevância turística/cultural
+// (a esmagadora maioria não tem visitação). Igrejas com valor cultural real (Catedral,
+// Basílicas etc.) são cadastradas manualmente via POST /api/places.
 const CATEGORY_TAG_MAP: Record<string, { key: string; value: string }> = {
   CINEMA:    { key: 'amenity', value: 'cinema' },
   TEATRO:    { key: 'amenity', value: 'theatre' },
   SHOWS:     { key: 'amenity', value: 'nightclub' },
   MUSEU:     { key: 'tourism', value: 'museum' },
   PARQUE:    { key: 'leisure', value: 'park' },
-  IGREJA:    { key: 'amenity', value: 'place_of_worship' },
   FEIRA:     { key: 'amenity', value: 'marketplace' },
   EXPOSICAO: { key: 'tourism', value: 'gallery' },
   AR_LIVRE:  { key: 'leisure', value: 'nature_reserve' },
