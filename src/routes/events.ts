@@ -12,16 +12,17 @@ router.get('/', async (req: Request, res: Response) => {
   const skip = (Number(page) - 1) * Number(limit);
 
   const where: Record<string, unknown> = { isActive: true };
-
-  if (upcoming === 'true') {
-    where.date = { gte: new Date() };
-  }
+  const and: Record<string, unknown>[] = [];
 
   if (date) {
     const start = new Date(String(date));
     const end   = new Date(String(date));
     end.setDate(end.getDate() + 1);
     where.date = { gte: start, lt: end };
+  } else if (upcoming === 'true') {
+    // "Atual": ainda não começou OU já começou mas ainda não terminou — eventos de
+    // múltiplos dias não podem sumir do filtro assim que o primeiro dia passa.
+    and.push({ OR: [{ date: { gte: new Date() } }, { endDate: { gte: new Date() } }] });
   }
 
   if (category) {
@@ -30,11 +31,15 @@ router.get('/', async (req: Request, res: Response) => {
   }
 
   if (search) {
-    where.OR = [
-      { title:       { contains: String(search), mode: 'insensitive' } },
-      { description: { contains: String(search), mode: 'insensitive' } },
-    ];
+    and.push({
+      OR: [
+        { title:       { contains: String(search), mode: 'insensitive' } },
+        { description: { contains: String(search), mode: 'insensitive' } },
+      ],
+    });
   }
+
+  if (and.length) where.AND = and;
 
   if (isFree === 'true')  where.isFree = true;
   if (isFree === 'false') where.isFree = false;
