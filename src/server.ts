@@ -3,6 +3,8 @@ dotenv.config();
 
 import express, { Request, Response, NextFunction } from 'express';
 import cors from 'cors';
+import swaggerUi from 'swagger-ui-express';
+import { swaggerSpec } from './swagger';
 import authRoutes from './routes/auth';
 import placesRoutes from './routes/places';
 import eventsRoutes from './routes/events';
@@ -14,6 +16,8 @@ const PORT = process.env.PORT || 3000;
 
 app.use(cors());
 app.use(express.json());
+
+app.use('/api/docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, { customSiteTitle: 'Ateneu API — Documentação' }));
 
 app.use('/api/auth', authRoutes);
 app.use('/api/places', placesRoutes);
